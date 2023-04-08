@@ -9,20 +9,13 @@ quantization_table = [
     72, 92, 95, 98, 112, 100, 103, 99
 ];
 
-function quantized = quantize(input_matrix)
-    quantized = zeros(size(input_matrix))
-    for i = 1 : size(input_matrix, 1)
-        for j = 1 : size(input_matrix, 2)
-            quantized(i,j,:,:) = input_matrix(i,j,:,:) ./ quantization_table;
-        end
-    end
+function quantized = quantize(input_matrix, k)
+    qt_reshaped = reshape(quantization_table, [1, 1, k, k]);
+    quantized = bsxfun(@rdivide, input_matrix, qt_reshaped);
     quantized = round(quantized);
 end
 
-function unquantized = reverse_quantize(quantized)
-    for i = 1 : size(quantized, 1)
-        for j = 1 : size(quantized, 2)
-            unquantized(i,j,:,:) = quantized(i,j,:,:) .* quantization_table;
-        end
-    end
+function unquantized = reverse_quantize(quantized, k)
+    qt_reshaped = reshape(quantization_table, [1, 1, k, k]);
+    unquantized = bsxfun(@times, quantized, qt_reshaped);
 end
