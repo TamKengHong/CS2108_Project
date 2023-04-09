@@ -109,9 +109,98 @@ classdef myJPEG
             fftImgBlocks = cellfun(@(c) c .* q_table, quantized, "UniformOutput", false);
         end
 
+        % Convert into 1d array
+        function flat_array = flatten(quantized, k)
+            flat_array = [size(quantized, 1), size(quantized, 2)];
+            imag_flat = [];
+            if k == 8
+                scanning_order = load("scanning8.mat").scanning8;
+            elseif k == 16
+                scanning_order = load("scanning16.mat").scanning16;
+            else
+                scanning_order = load("scanning32.mat").scanning32;
+            end
 
+            for i = 1 : size(quantized, 1)
+                for j = 1 : size(quantized, 2)
+                    chans = cell2mat(quantized(i, j));
+                    chans_real = real(chans);
+                    chans_imag = imag(chans);
+                    
+                    flat_array = [flat_array chans_real(scanning_order) chans_real(scanning_order + k * k) chans_real(scanning_order + 2 * k * k)];
+                    imag_flat = [imag_flat chans_imag(scanning_order) chans_imag(scanning_order + k * k ) chans_imag(scanning_order + 2 * k * k)];
+                end
+            end
 
-        function compressedData = compress(rgbImg, quality)
+            flat_array = [flat_array imag_flat];
+        end
+
+        % Convert a flattened array into the quantized matrix form
+        function quantized = unflatten(flat_array, k)
+            quantized = cell(flat_array(1), flat_array(2));
+            flat_array = flat_array(3:end);
+            imag_flat = flat_array(numel(flat_array) / 2 + 1 : end);
+            flat_array = flat_array(1 : numel(flat_array) / 2);
+            flat_array = flat_array + imag_flat * 1i;
+            if k == 8
+                scanning_order = load("scanning8.mat").scanning8;
+            elseif k == 16
+                scanning_order = load("scanning16.mat").scanning16;
+            else
+                scanning_order = load("scanning32.mat").scanning32;
+            end
+
+            scanning_order = [scanning_order scanning_order + k * k scanning_order + 2 * k * k];
+
+            for m = 1 : size(quantized, 1)
+                for n = 1 : size(quantized, 2)
+                    cel = reshape(flat_array(1 : 3 * k * k), [k, k, 3]);
+                    cel(scanning_order) = cel;
+                    quantized(m, n) = num2cell(cel, [1 2 3]);
+                    flat_array = flat_array(3 * k * k + 1 : end);
+                end
+            end
+
+        end
+
+        % Run length encode a 1-d array
+        function encoded_array = rlencode(input_array)
+            % Find the indices where the values of x change
+            idx = find([true, diff(input_array) ~= 0]);
+
+            % Compute the lengths of consecutive values
+            len = diff([idx, numel(input_array) + 1]);
+
+            % Compute the values of consecutive values
+            val = input_array(idx);
+
+            encoded_array = [len(:), val(:)].';
+            encoded_array = encoded_array(:).';
+        end
+
+        % Run length decode a 1-d array
+        function decoded_array = rldecode(input_array)
+            lengths = input_array(1:2:length(input_array));
+            symbols = input_array(2:2:length(input_array));
+            decoded_array = repelem(symbols, lengths);
+        end
+
+        % Find frequency and do Huffman coding on an array
+        function [encoded, code_book] = huffman_encode(input_matrix)
+            % Convert matrix to vector and do run-length encode
+            [C, ia, ic] = unique(input_matrix);
+            freq = accumarray(ic, 1);
+            freq = freq / numel(input_matrix);
+            % Create huffman code and encode
+            code_book = huffmandict(C, freq);
+            encoded = huffmanenco(input_matrix, code_book);
+        end
+
+        function rlencoded = huffman_decode(encoded, code_book)
+            rlencoded = huffmandeco(encoded, code_book);
+        end
+
+        function [compressedData, code_book] = compress(rgbImg, quality)
             if strcmp(quality, "low")
                 sampleFactor = 0.25;
                 blockSize = 32;
@@ -135,21 +224,37 @@ classdef myJPEG
             % Step 4: 2d FFT on each block
             fftImgBlocks = myJPEG.fft2d(imgBlocks);
 
-            % Step 5: Zigzag, quantize, huffman
+            % Step 5: Quantise the values
+            
+            quantized = myJPEG.quantize(fftImgBlocks, blockSize);
 
-            compressedData = fftImgBlocks;
+            % Step 6: Scan the values in zigzag
+
+            flat_array = myJPEG.flatten(quantized, blockSize);
+
+            % Step 7: Run-length and Huffman code
+            encoded = myJPEG.rlencode(flat_array);
+            [compressedData, code_book] = myJPEG.huffman_encode(encoded);
         end
         
-        function finalImg = decompress(compressedData)
-            % Step 1: Huffman decode, dequantize, zigzag
+        function finalImg = decompress(compressedData, code_book)
+            % Step 1: Huffman and run-length decode
+            encoded = myJPEG.huffman_decode(compressedData, code_book);
+            flat_array = myJPEG.rldecode(encoded);
 
-            % Step 2: Inverse 2D FFT on each block.
-            imgBlocks = myJPEG.ifft2d(compressedData);
+            % Step 2: Gather the values in zigzag manner
+            quantized = myJPEG.unflatten(flat_array, 8);
 
-            % Step 3: Convert blocks to ycbcr image
+            % Step 3: Unquantised the matrix
+            fftImgBlocks = myJPEG.unquantize(quantized, 8);
+
+            % Step 4: Inverse 2D FFT on each block.
+            imgBlocks = myJPEG.ifft2d(fftImgBlocks);
+
+            % Step 5: Convert blocks to ycbcr image
             ycbcrImg = myJPEG.blocks2img(imgBlocks);
 
-            % Step 4: Convert YCbCr to RGB image
+            % Step 6: Convert YCbCr to RGB image
             finalImg = myJPEG.ycbcr2rgb(ycbcrImg);
         end
     end
