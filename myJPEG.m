@@ -111,8 +111,10 @@ classdef myJPEG
 
         % Convert into 1d array
         function flat_array = flatten(quantized, k)
+            % Store size of matrix as first 2 elements
             flat_array = [size(quantized, 1), size(quantized, 2)];
             imag_flat = [];
+
             if k == 8
                 scanning_order = load("scanning8.mat").scanning8;
             elseif k == 16
@@ -131,17 +133,20 @@ classdef myJPEG
                     imag_flat = [imag_flat chans_imag(scanning_order) chans_imag(scanning_order + k * k ) chans_imag(scanning_order + 2 * k * k)];
                 end
             end
-
+            % Store real and imaginary one after another
             flat_array = [flat_array imag_flat];
         end
 
         % Convert a flattened array into the quantized matrix form
         function quantized = unflatten(flat_array, k)
+            % Get size of matrix from first 2 elements
             quantized = cell(flat_array(1), flat_array(2));
             flat_array = flat_array(3:end);
+            % Split and sum the real and imaginary parts
             imag_flat = flat_array(numel(flat_array) / 2 + 1 : end);
             flat_array = flat_array(1 : numel(flat_array) / 2);
             flat_array = flat_array + imag_flat * 1i;
+
             if k == 8
                 scanning_order = load("scanning8.mat").scanning8;
             elseif k == 16
@@ -187,8 +192,8 @@ classdef myJPEG
 
         % Find frequency and do Huffman coding on an array
         function [encoded, code_book] = huffman_encode(input_matrix)
-            % Convert matrix to vector and do run-length encode
-            [C, ia, ic] = unique(input_matrix);
+            % Count frequencies
+            [C, ~, ic] = unique(input_matrix);
             freq = accumarray(ic, 1);
             freq = freq / numel(input_matrix);
             % Create huffman code and encode

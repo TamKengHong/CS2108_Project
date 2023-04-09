@@ -34,6 +34,3 @@ for i = 2:n
         end
     end
 end
-
-% Display the index array
-disp(idx);
