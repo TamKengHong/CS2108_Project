@@ -79,14 +79,14 @@ classdef myJPEG
         % Quantise values of each block and each channel
         function quantized = quantize(fftImgBlocks, k)
             q_table = [
-                16, 11, 10, 16, 24, 40, 51, 61;
-                12, 12, 14, 19, 26, 58, 60, 55;
-                14, 13, 16, 24, 40, 57, 69, 56;
-                14, 17, 22, 29, 51, 87, 80, 62;
-                18, 22, 37, 56, 68, 109, 103, 77;
-                24, 35, 55, 64, 81, 104, 113, 92;
-                49, 64, 78, 87, 103, 121, 120, 101;
-                72, 92, 95, 98, 112, 100, 103, 99
+                16, 11, 20, 46, 46, 20, 11, 16;
+                12, 22, 54, 99, 99, 54, 22, 12;
+                24, 63, 99, 99, 99, 99, 63, 24;
+                44, 99, 99, 89, 89, 99, 99, 44;
+                44, 99, 99, 89, 89, 99, 99, 44;
+                24, 63, 99, 99, 99, 99, 63, 24;
+                12, 22, 54, 99, 99, 54, 22, 12;
+                16, 11, 20, 46, 46, 20, 11, 16;
             ];
             q_table = kron(q_table, ones(k / 8));
             quantized = cellfun(@(c) c ./ q_table, fftImgBlocks, "UniformOutput", false);
@@ -96,14 +96,14 @@ classdef myJPEG
         % Get the unquantised values
         function fftImgBlocks = unquantize(quantized, k)
             q_table = [
-                16, 11, 10, 16, 24, 40, 51, 61;
-                12, 12, 14, 19, 26, 58, 60, 55;
-                14, 13, 16, 24, 40, 57, 69, 56;
-                14, 17, 22, 29, 51, 87, 80, 62;
-                18, 22, 37, 56, 68, 109, 103, 77;
-                24, 35, 55, 64, 81, 104, 113, 92;
-                49, 64, 78, 87, 103, 121, 120, 101;
-                72, 92, 95, 98, 112, 100, 103, 99
+                16, 11, 20, 46, 46, 20, 11, 16;
+                12, 22, 54, 99, 99, 54, 22, 12;
+                24, 63, 99, 99, 99, 99, 63, 24;
+                44, 99, 99, 89, 89, 99, 99, 44;
+                44, 99, 99, 89, 89, 99, 99, 44;
+                24, 63, 99, 99, 99, 99, 63, 24;
+                12, 22, 54, 99, 99, 54, 22, 12;
+                16, 11, 20, 46, 46, 20, 11, 16;
             ];
             q_table = kron(q_table, ones(k / 8));
             fftImgBlocks = cellfun(@(c) c .* q_table, quantized, "UniformOutput", false);
@@ -242,16 +242,24 @@ classdef myJPEG
             [compressedData, code_book] = myJPEG.huffman_encode(encoded);
         end
         
-        function finalImg = decompress(compressedData, code_book)
+        function finalImg = decompress(compressedData, code_book, quality)
+            if strcmp(quality, "low")
+                blockSize = 32;
+            elseif strcmp(quality, "med")
+                blockSize = 16;
+            else % high quality
+                blockSize = 8;
+            end
+
             % Step 1: Huffman and run-length decode
             encoded = myJPEG.huffman_decode(compressedData, code_book);
             flat_array = myJPEG.rldecode(encoded);
 
             % Step 2: Gather the values in zigzag manner
-            quantized = myJPEG.unflatten(flat_array, 8);
+            quantized = myJPEG.unflatten(flat_array, blockSize);
 
             % Step 3: Unquantised the matrix
-            fftImgBlocks = myJPEG.unquantize(quantized, 8);
+            fftImgBlocks = myJPEG.unquantize(quantized, blockSize);
 
             % Step 4: Inverse 2D FFT on each block.
             imgBlocks = myJPEG.ifft2d(fftImgBlocks);
