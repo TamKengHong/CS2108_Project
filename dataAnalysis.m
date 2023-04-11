@@ -56,8 +56,6 @@ for i = 1:n
     time_png(i) = toc;
 end
 
-Sure, here's an implementation for Part 2:
-
 % Part 2: Plot the results
 
 % 2.1: myJPEG: low, med, high quality comparison.
