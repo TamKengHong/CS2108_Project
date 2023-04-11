@@ -134,7 +134,7 @@ classdef myJPEG
                 end
             end
             % Store real and imaginary one after another
-            flat_array = [flat_array imag_flat];
+            flat_array = uint8([flat_array imag_flat]);
         end
 
         % Convert a flattened array into the quantized matrix form
@@ -145,7 +145,7 @@ classdef myJPEG
             % Split and sum the real and imaginary parts
             imag_flat = flat_array(numel(flat_array) / 2 + 1 : end);
             flat_array = flat_array(1 : numel(flat_array) / 2);
-            flat_array = flat_array + imag_flat * 1i;
+            flat_array = double(flat_array) + double(imag_flat) .* 1i;
 
             if k == 8
                 scanning_order = load("scanning8.mat").scanning8;
@@ -165,7 +165,6 @@ classdef myJPEG
                     flat_array = flat_array(3 * k * k + 1 : end);
                 end
             end
-
         end
 
         % Run length encode a 1-d array
@@ -216,7 +215,8 @@ classdef myJPEG
                 sampleFactor = 0.75;
                 blockSize = 8;
             end
-
+            
+            tic;
             % Step 1: Convert RGB to YCbCr
             ycbcrImg = myJPEG.rgb2ycbcr(rgbImg);
 
@@ -230,16 +230,15 @@ classdef myJPEG
             fftImgBlocks = myJPEG.fft2d(imgBlocks);
 
             % Step 5: Quantise the values
-            
             quantized = myJPEG.quantize(fftImgBlocks, blockSize);
 
             % Step 6: Scan the values in zigzag
-
             flat_array = myJPEG.flatten(quantized, blockSize);
 
             % Step 7: Run-length and Huffman code
             encoded = myJPEG.rlencode(flat_array);
             [compressedData, code_book] = myJPEG.huffman_encode(encoded);
+   
         end
         
         function finalImg = decompress(compressedData, code_book, quality)
@@ -250,7 +249,7 @@ classdef myJPEG
             else % high quality
                 blockSize = 8;
             end
-
+            tic;
             % Step 1: Huffman and run-length decode
             encoded = myJPEG.huffman_decode(compressedData, code_book);
             flat_array = myJPEG.rldecode(encoded);
@@ -269,6 +268,8 @@ classdef myJPEG
 
             % Step 6: Convert YCbCr to RGB image
             finalImg = myJPEG.ycbcr2rgb(ycbcrImg);
+
+            toc;
         end
     end
 end

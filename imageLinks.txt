@@ -1,12 +1,36 @@
 The files are too big to be tracked on github, download them via these links
 
-1. https://commons.wikimedia.org/wiki/File:Auto_des_BR_Hof_20210223_Dsc7974032621_00RAWb.tif
-2. https://commons.wikimedia.org/wiki/File:US_Capitol_Building.tif
-3. https://commons.wikimedia.org/wiki/File:Strawberry_Lake_with_swan_Ann_Arbor_Michigan.tif
+Buildings:
+1. https://commons.wikimedia.org/wiki/File:Jambudweep_Rachna.tif
+2. https://commons.wikimedia.org/wiki/File:Abrissbaustelle_Bahnhofstra%C3%9Fe_10_Hof_20210218_Dsc7793032621_00RAWb_cens.tif
+3. https://commons.wikimedia.org/wiki/File:US_Capitol_Building.tif 
+
+Nature:
 4. https://commons.wikimedia.org/wiki/File:Panorama_Verbier.tif
-5. https://commons.wikimedia.org/wiki/File:Jambudweep_Rachna.tif
-6. https://commons.wikimedia.org/wiki/File:Abrissbaustelle_Bahnhofstra%C3%9Fe_10_Hof_20210218_Dsc7793032621_00RAWb_cens.tif
-7. https://commons.wikimedia.org/wiki/File:Verschneite_Gleise_bei_Sonnenschein_Hof_20210121_Dsc7494022721_00RAWb.tif
-8. https://photojournal.jpl.nasa.gov/tiff/PIA25781.tif
-9. https://photojournal.jpl.nasa.gov/tiff/PIA25163.tif
-10. https://photojournal.jpl.nasa.gov/tiff/PIA24577.tif
+5. https://commons.wikimedia.org/wiki/File:Strawberry_Lake_with_swan_Ann_Arbor_Michigan.tif
+6. https://commons.wikimedia.org/wiki/File:Grassy_hill_overlooking_rocky_mountains_in_Sierra_Nevada_National_Park_(DSCF5220).tif
+
+Vehicles:
+7. https://commons.wikimedia.org/wiki/File:Auto_des_BR_Hof_20210223_Dsc7974032621_00RAWb.tif
+8. https://commons.wikimedia.org/wiki/File:Ashley_750.tif
+9. https://commons.wikimedia.org/wiki/File:Moscow_bus_160206_2023-03.tiff
+
+Animals:
+10. https://commons.wikimedia.org/wiki/File:Mountain_Bulbul_at_Sattal_DSCN9224_1.tif
+11. https://commons.wikimedia.org/wiki/File:2021-07-18_11-55-25_(C,Smoothing4).tif
+12. https://commons.wikimedia.org/wiki/File:Squid_colors_2.tif
+
+People:
+13. https://commons.wikimedia.org/wiki/File:Helmut_Kohl_(1996)_cropped.tif
+14. https://commons.wikimedia.org/wiki/File:Skateboarding_at_Mexico_City_-_Flip_-_121.tif
+15. https://commons.wikimedia.org/wiki/File:Waiting_for_the_bus_in_the_newly_built_bus_station_behind_Amsterdam_Central_station._In_the_background_river_IJ_and_the_north_side_of_the_city;_free_photo_Amsterdam_by_Fons_Heijnsbroek,_Spring_2010.tif
+
+Paintings:
+16. https://commons.wikimedia.org/wiki/File:Ol%C3%A9_!_by_Clarence_Gagnon_1906.tif
+17. https://commons.wikimedia.org/wiki/File:Carl_Larsson_Azalea_Thielska_215.tif
+18. https://commons.wikimedia.org/wiki/File:In_the_shade_of_a_Tree_by_Helen_Galloway_McNicoll_1910.tif
+
+Space:
+19. https://photojournal.jpl.nasa.gov/tiff/PIA24577.tif
+20. https://photojournal.jpl.nasa.gov/tiff/PIA25163.tif
+21. https://photojournal.jpl.nasa.gov/tiff/PIA25781.tif
