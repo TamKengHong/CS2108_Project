@@ -79,14 +79,14 @@ classdef myJPEG
         % Quantise values of each block and each channel
         function quantized = quantize(fftImgBlocks, k)
             q_table = [
-                16, 11, 20, 46, 46, 20, 11, 16;
-                12, 22, 54, 99, 99, 54, 22, 12;
-                24, 63, 99, 99, 99, 99, 63, 24;
-                44, 99, 99, 89, 89, 99, 99, 44;
-                44, 99, 99, 89, 89, 99, 99, 44;
-                24, 63, 99, 99, 99, 99, 63, 24;
-                12, 22, 54, 99, 99, 54, 22, 12;
-                16, 11, 20, 46, 46, 20, 11, 16;
+                24, 28, 40, 56, 56, 40, 28, 24;
+                28, 34, 64, 99, 99, 64, 34, 28;
+                38, 63, 99, 129, 129, 99, 63, 38;
+                52, 99, 129, 119, 119, 129, 99, 52;
+                52, 99, 129, 119, 119, 129, 99, 52;
+                38, 63, 99, 129, 129, 99, 63, 38;
+                28, 34, 64, 99, 99, 64, 34, 28;
+                24, 28, 40, 56, 56, 40, 28, 24;
             ];
             q_table = kron(q_table, ones(k / 8));
             quantized = cellfun(@(c) c ./ q_table, fftImgBlocks, "UniformOutput", false);
@@ -96,14 +96,14 @@ classdef myJPEG
         % Get the unquantised values
         function fftImgBlocks = unquantize(quantized, k)
             q_table = [
-                16, 11, 20, 46, 46, 20, 11, 16;
-                12, 22, 54, 99, 99, 54, 22, 12;
-                24, 63, 99, 99, 99, 99, 63, 24;
-                44, 99, 99, 89, 89, 99, 99, 44;
-                44, 99, 99, 89, 89, 99, 99, 44;
-                24, 63, 99, 99, 99, 99, 63, 24;
-                12, 22, 54, 99, 99, 54, 22, 12;
-                16, 11, 20, 46, 46, 20, 11, 16;
+                24, 28, 40, 56, 56, 40, 28, 24;
+                28, 34, 64, 99, 99, 64, 34, 28;
+                38, 63, 99, 129, 129, 99, 63, 38;
+                52, 99, 129, 119, 119, 129, 99, 52;
+                52, 99, 129, 119, 119, 129, 99, 52;
+                38, 63, 99, 129, 129, 99, 63, 38;
+                28, 34, 64, 99, 99, 64, 34, 28;
+                24, 28, 40, 56, 56, 40, 28, 24;
             ];
             q_table = kron(q_table, ones(k / 8));
             fftImgBlocks = cellfun(@(c) c .* q_table, quantized, "UniformOutput", false);
@@ -113,7 +113,6 @@ classdef myJPEG
         function flat_array = flatten(quantized, k)
             % Store size of matrix as first 2 elements
             flat_array = [size(quantized, 1), size(quantized, 2)];
-            imag_flat = [];
 
             if k == 8
                 scanning_order = load("scanning8.mat").scanning8;
@@ -123,24 +122,20 @@ classdef myJPEG
                 scanning_order = load("scanning32.mat").scanning32;
             end
 
-            for i = 1 : size(quantized, 1)
-                for j = 1 : size(quantized, 2)
-                    chans = cell2mat(quantized(i, j));
-                    chans_real = real(chans);
-                    chans_imag = imag(chans);
-                    
-                    flat_array = [flat_array chans_real(scanning_order) chans_real(scanning_order + k * k) chans_real(scanning_order + 2 * k * k)];
-                    imag_flat = [imag_flat chans_imag(scanning_order) chans_imag(scanning_order + k * k ) chans_imag(scanning_order + 2 * k * k)];
-                end
-            end
-            % Store real and imaginary one after another
-            flat_array = uint8([flat_array imag_flat]);
+            % Define function to scan each cell
+            scan = @(x) [x(scanning_order) x(scanning_order + k*k) x(scanning_order + 2*k*k)];
+    
+            intermediate = cellfun(scan, quantized, 'UniformOutput', false);
+            intermediate = cell2mat(reshape(intermediate, 1, []));
+            flat_array = cat(2, flat_array, real(intermediate), imag(intermediate));
+            flat_array = int16(flat_array);
         end
 
         % Convert a flattened array into the quantized matrix form
         function quantized = unflatten(flat_array, k)
             % Get size of matrix from first 2 elements
-            quantized = cell(flat_array(1), flat_array(2));
+            s1 = flat_array(1);
+            s2 = flat_array(2);
             flat_array = flat_array(3:end);
             % Split and sum the real and imaginary parts
             imag_flat = flat_array(numel(flat_array) / 2 + 1 : end);
@@ -156,15 +151,12 @@ classdef myJPEG
             end
 
             scanning_order = [scanning_order scanning_order + k * k scanning_order + 2 * k * k];
-
-            for m = 1 : size(quantized, 1)
-                for n = 1 : size(quantized, 2)
-                    cel = reshape(flat_array(1 : 3 * k * k), [k, k, 3]);
-                    cel(scanning_order) = cel;
-                    quantized(m, n) = num2cell(cel, [1 2 3]);
-                    flat_array = flat_array(3 * k * k + 1 : end);
-                end
-            end
+            flat_array = reshape(flat_array, k*k*3, []);
+            flat_array(scanning_order, :) = flat_array;
+            flat_array = reshape(flat_array, [k, k, 3, s1, s2]);
+            flat_array = permute(flat_array, [4 5 1 2 3]);
+            quantized = num2cell(flat_array, [3 4 5]);
+            quantized = cellfun(@squeeze, quantized, 'UniformOutput', false);
         end
 
         % Run length encode a 1-d array
@@ -197,7 +189,12 @@ classdef myJPEG
             freq = freq / numel(input_matrix);
             % Create huffman code and encode
             code_book = huffmandict(C, freq);
-            encoded = huffmanenco(input_matrix, code_book);
+
+            % Huffman encode matrix in parts to avoid too large matrices
+            chunk_size = ceil(2e9 / size(C, 2));
+            chunks = mat2cell(input_matrix, 1, [chunk_size * ones(1, floor(numel(input_matrix) / chunk_size)) mod(numel(input_matrix), chunk_size)]);
+            encoded = cellfun(@(c) huffmanenco(c, code_book), chunks, "UniformOutput", false);
+            encoded = cell2mat(encoded);
         end
 
         function rlencoded = huffman_decode(encoded, code_book)
@@ -235,7 +232,7 @@ classdef myJPEG
             % Step 6: Scan the values in zigzag
             flat_array = myJPEG.flatten(quantized, blockSize);
 
-            % Step 7: Run-length and Huffman code
+            % Step 7: Huffman code and run-length encode
             encoded = myJPEG.rlencode(flat_array);
             [compressedData, code_book] = myJPEG.huffman_encode(encoded);
    
