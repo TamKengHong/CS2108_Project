@@ -48,14 +48,18 @@ classdef myJPEG
             sampledImg = cat(3, Y, cbDownsampled, crDownsampled);
         end
 
-        % Converts an image to k x k x 3 blocks
-        function imgBlocks = img2blocks(img, k)
+        % Pad the image to make dimensions multiples of k
+        function paddedImg = padImage(img, k)
             rows = ceil(size(img, 1) / k);
             cols = ceil(size(img, 2) / k);
 
-            % Pad the image to make dimensions multiples of k
-            paddedImg = padarray(img, [rows * k - size(img, 1), cols * k - size(img, 2)], 'post');
-        
+            paddedImg = padarray(img, [rows * k - size(img, 1), cols * k - size(img, 2)], 255, 'post');
+        end
+
+        % Converts an image to k x k x 3 blocks
+        function imgBlocks = img2blocks(paddedImg, k)
+            rows = size(paddedImg, 1) / k;
+            cols = size(paddedImg, 2) / k;
             % Split the padded image into k x k x 3 blocks of rows x cols 
             imgBlocks = mat2cell(paddedImg, repmat(k, 1, rows), repmat(k, 1, cols), 3);
         end
@@ -212,30 +216,31 @@ classdef myJPEG
                 sampleFactor = 0.75;
                 blockSize = 8;
             end
-            
-            tic;
-            % Step 1: Convert RGB to YCbCr
-            ycbcrImg = myJPEG.rgb2ycbcr(rgbImg);
 
-            % Step 2: Chroma subsample
+            % Step 1: Pad image to fit block size of k x k
+            paddedImg = myJPEG.padImage(rgbImg, blockSize);
+
+            % Step 2: Convert RGB to YCbCr
+            ycbcrImg = myJPEG.rgb2ycbcr(paddedImg);
+
+            % Step 3: Chroma subsample
             sampledImg = myJPEG.chromaSubsampling(ycbcrImg, sampleFactor);
 
-            % Step 3: Block splitting
+            % Step 4: Block splitting
             imgBlocks = myJPEG.img2blocks(sampledImg, blockSize);
 
-            % Step 4: 2d FFT on each block
+            % Step 5: 2d FFT on each block
             fftImgBlocks = myJPEG.fft2d(imgBlocks);
 
-            % Step 5: Quantise the values
+            % Step 6: Quantise the values
             quantized = myJPEG.quantize(fftImgBlocks, blockSize);
 
-            % Step 6: Scan the values in zigzag
+            % Step 7: Scan the values in zigzag
             flat_array = myJPEG.flatten(quantized, blockSize);
 
-            % Step 7: Huffman code and run-length encode
+            % Step 8: Huffman code and run-length encode
             encoded = myJPEG.rlencode(flat_array);
             [compressedData, code_book] = myJPEG.huffman_encode(encoded);
-   
         end
         
         function finalImg = decompress(compressedData, code_book, quality)
@@ -246,7 +251,7 @@ classdef myJPEG
             else % high quality
                 blockSize = 8;
             end
-            tic;
+
             % Step 1: Huffman and run-length decode
             encoded = myJPEG.huffman_decode(compressedData, code_book);
             flat_array = myJPEG.rldecode(encoded);
@@ -265,8 +270,6 @@ classdef myJPEG
 
             % Step 6: Convert YCbCr to RGB image
             finalImg = myJPEG.ycbcr2rgb(ycbcrImg);
-
-            toc;
         end
     end
 end
