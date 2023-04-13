@@ -1,82 +1,82 @@
-% % Downsize all our images into at most 1000 x 1000
-% for i = 1:21
-%     img = imread(sprintf("sourceImages/%d.tif",i));
-%     [height, width, ~] = size(img);
-%     
-%     % calculate new dimensions while keeping aspect ratio
-%     if height > width
-%         new_height = 1000;
-%         new_width = round(new_height/height*width);
-%     else
-%         new_width = 1000;
-%         new_height = round(new_width/width*height);
-%     end
-%     % resize image, set make sure its uint8, get rgb channels only.
-%     img = im2uint8(imresize(img, [new_height, new_width]));
-%     img = img(:,:,1:3);
-%     imwrite(img, sprintf("out/%d.tif",i));
-% end
+% Downsize all our images into at most 1000 x 1000
+for i = 1:21
+    img = imread(sprintf("sourceImages/%d.tif",i));
+    [height, width, ~] = size(img);
+    
+    % calculate new dimensions while keeping aspect ratio
+    if height > width
+        new_height = 1000;
+        new_width = round(new_height/height*width);
+    else
+        new_width = 1000;
+        new_height = round(new_width/width*height);
+    end
+    % resize image, set make sure its uint8, get rgb channels only.
+    img = im2uint8(imresize(img, [new_height, new_width]));
+    img = img(:,:,1:3);
+    imwrite(img, sprintf("out/%d.tif",i));
+end
 
 
-% % Data Analysis:
-% % Part 0: Define variables, load the image files & make sure they correct format.
-% n = 21; % number of images.
-% qualities = ["low", "med", "high"];
-% imgs = cell(n, 1);
-% original_size = zeros(n, 1);
-% 
-% size_myJPEG = zeros(n, 3);  % 1 is low, 2 is med, 3 is high.
-% size_jpeg = zeros(n, 1);
-% size_png = zeros(n, 1);
-% time_myJPEG_compress = zeros(n, 3);
-% time_jpeg = zeros(n, 1);
-% time_png = zeros(n, 1);
-% 
-% decompressed_imgs = cell(n, 3); % decompressed rgb images after myJPEG.decompress()
-% time_myJPEG_decompress = zeros(n, 3);
-% 
-% for i = 1:n
-%     file_path = sprintf("images/%d.tif",i);
-%     imgs{i} = imread(file_path);
-%     original_size(i) = dir(file_path).bytes;
-% end
-% 
-% 
-% % Part 1: Get all the data. 
-% % Get the compressed size, the runtime, and result image for each compression.
-% 
-% % Compress images using MATLAB's JPEG & record their timing.
-% for i = 1:n
-%     tic
-%     imwrite(imgs{i}, sprintf('%d.jpg', i));
-%     size_jpeg(i) = dir(sprintf('%d.jpg', i)).bytes; % directly get bytes.
-%     time_jpeg(i) = toc;
-% end
-% 
-% % Compress images using MATLAB's PNG & record their timing.
-% for i = 1:n
-%     tic
-%     imwrite(imgs{i}, sprintf('%d.png', i));
-%     size_png(i) = dir(sprintf('%d.png', i)).bytes;
-%     time_png(i) = toc;
-% end
-% 
-% % Compress images using myJPEG & record their timing.
-% for i = 1:n
-%     for j = 1:3
-%     tic; % time each compression.
-%     [compressedData, code_book] = myJPEG.compress(imgs{i}, qualities(j));
-%     time_myJPEG_compress(i, j) = toc;
-%     size_myJPEG(i, j) = (numel(compressedData) + numel(code_book)) / 8; % bin to bytes
-% 
-%     tic; % time each decompression.
-%     decompressed_imgs{i, j} = myJPEG.decompress(compressedData, code_book, qualities(j));
-%     time_myJPEG_decompress(i, j) = toc;
-%     disp([i j])
-%     disp(time_myJPEG_compress(i, j));
-%     disp(time_myJPEG_decompress(i, j));
-%     end
-% end
+% Data Analysis:
+% Part 0: Define variables, load the image files & make sure they correct format.
+n = 21; % number of images.
+qualities = ["low", "med", "high"];
+imgs = cell(n, 1);
+original_size = zeros(n, 1);
+
+size_myJPEG = zeros(n, 3);  % 1 is low, 2 is med, 3 is high.
+size_jpeg = zeros(n, 1);
+size_png = zeros(n, 1);
+time_myJPEG_compress = zeros(n, 3);
+time_jpeg = zeros(n, 1);
+time_png = zeros(n, 1);
+
+decompressed_imgs = cell(n, 3); % decompressed rgb images after myJPEG.decompress()
+time_myJPEG_decompress = zeros(n, 3);
+
+for i = 1:n
+    file_path = sprintf("images/%d.tif",i);
+    imgs{i} = imread(file_path);
+    original_size(i) = dir(file_path).bytes;
+end
+
+
+% Part 1: Get all the data. 
+% Get the compressed size, the runtime, and result image for each compression.
+
+% Compress images using MATLAB's JPEG & record their timing.
+for i = 1:n
+    tic
+    imwrite(imgs{i}, sprintf('%d.jpg', i));
+    size_jpeg(i) = dir(sprintf('%d.jpg', i)).bytes; % directly get bytes.
+    time_jpeg(i) = toc;
+end
+
+% Compress images using MATLAB's PNG & record their timing.
+for i = 1:n
+    tic
+    imwrite(imgs{i}, sprintf('%d.png', i));
+    size_png(i) = dir(sprintf('%d.png', i)).bytes;
+    time_png(i) = toc;
+end
+
+% Compress images using myJPEG & record their timing.
+for i = 1:n
+    for j = 1:3
+    tic; % time each compression.
+    [compressedData, code_book] = myJPEG.compress(imgs{i}, qualities(j));
+    time_myJPEG_compress(i, j) = toc;
+    size_myJPEG(i, j) = (numel(compressedData) + numel(code_book)) / 8; % bin to bytes
+
+    tic; % time each decompression.
+    decompressed_imgs{i, j} = myJPEG.decompress(compressedData, code_book, qualities(j));
+    time_myJPEG_decompress(i, j) = toc;
+    disp([i j])
+    disp(time_myJPEG_compress(i, j));
+    disp(time_myJPEG_decompress(i, j));
+    end
+end
 
 % Part 2: Plot the results
 
